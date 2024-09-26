@@ -145,6 +145,7 @@
             value = effectFn();
             dirty = false;
           }
+          // 手动跟踪触发依赖，如果在嵌套effect中使用computed，如果不手动触发依赖，则外层effect不会更新
           track(obj, "value");
           return value;
         },

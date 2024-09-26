@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>组件</title>
+</head>
+
+<body></body>
+
+<script>
+  // 文本节点的 type 标识
+  const Text = Symbol()
+  const newVNode = {
+    // 描述文本节点
+    type: Text,
+    children: '我是文本内容'
+  }
+
+  // 注释节点的 type 标识
+  const Comment = Symbol()
+  const newVNode1 = {
+    // 描述注释节点
+    type: Comment,
+    children: '我是注释内容'
+  }
+
+  const renderer = createRenderer({
+    createElement(tag) {
+      // 省略部分代码
+    },
+    setElementText(el, text) {
+      // 省略部分代码
+    },
+    insert(el, parent, anchor = null) {
+      // 省略部分代码
+    },
+    createText(text) {
+      return document.createTextNode(text)
+    },
+    setText(el, text) {
+      el.nodeValue = text
+    },
+    createComment(text) {
+      return document.createComment(text)
+    },
+    setCommentText(el, text) {
+      el.nodeValue = text
+    },
+    patchProps(el, key, prevValue, nextValue) {
+      // 省略部分代码
+    }
+  })
+
+  function patch(n1, n2, container) {
+    // 新旧节点类型不同，卸载旧节点
+    if (n1 && n1.type !== n2.type) {
+      unmount(n1)
+      n1 = null
+    }
+
+    const { type } = n2
+
+    if (typeof type === 'string') {
+      if (!n1) {
+        mountElement(n2, container)
+      } else {
+        patchElement(n1, n2)
+      }
+    } else if (type === Text) {
+      if (!n1) {
+        // 调用 createText 函数创建文本节点
+        const el = n2.el = createText(n2.children)
+        insert(el, container)
+      } else {
+        const el = n2.el = n1.el
+        if (n2.children !== n1.children) {
+          // 调用 setText 函数更新文本节点的内容
+          setText(el, n2.children)
+        }
+      }
+    } else if (type === Comment) {
+      if (!n1) {
+        // 调用 createComment 函数创建注释节点
+        const el = n2.el = createComment(n2.children)
+        insert(el, container)
+      } else {
+        const el = n2.el = n1.el
+        if (n2.children !== n1.children) {
+          // 调用 setCommentText 函数更新注释节点的内容
+          setCommentText(el, n2.children)
+        }
+      }
+    } else if (type === Fragment) {
+      // 处理 Fragment 类型的 vnode
+      if (!n1) {
+        // 如果旧 vnode 不存在，则只需要将 Fragment 的 children 逐个挂载即可
+        n2.children.forEach(c => patch(null, c, container))
+      } else {
+        // 如果旧 vnode 存在，则只需要更新 Fragment 的 children 即可
+        patchChildren(n1, n2, container)
+      }
+    } else if (typeof type === 'object') {
+      if (!n1) {
+        // 挂载组件
+        mountComponent(n2, container, anchor)
+      } else {
+        // 更新组件
+        patchComponent(n1, n2, container)
+      }
+    }
+  }
+
+  const MyComponent = {
+    // 组件名称，可选
+    name: 'MyComponent',
+    // 组件的渲染函数，其返回值必须为虚拟 DOM
+    render() {
+      // 返回虚拟 DOM
+      return {
+        type: 'div',
+        children: `我是文本内容`
+      }
+    }
+  }
+
+  // 用来描述组件的 VNode 对象，type 属性值为组件的选项对象
+  const CompVNode = {
+    type: MyComponent
+  }
+  // 调用渲染器来渲染组件
+  renderer.render(CompVNode, document.querySelector('#app'))
+</script>
+
+</html>
